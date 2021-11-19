@@ -37,7 +37,7 @@ public class WebServer {
     }
 
     System.out.println("Waiting for connection");
-    for (;;) {
+    while(true) {
       try {
         // wait for a connection
         Socket remote = s.accept();
@@ -51,11 +51,27 @@ public class WebServer {
         // stop reading once a blank line is hit. This
         // blank line signals the end of the client HTTP
         // headers.
-        String str = ".";
-        while (str != null && !str.equals(""))
-          str = in.readLine();
+        String messageUtilisateur = ".";
+
+        while (messageUtilisateur != null && !messageUtilisateur.equals(""))
+          messageUtilisateur = in.readLine();
+          //On cree une instance de l'objet requete qui permet de parse le messageUtilisateur
+          Request request = new Request(messageUtilisateur);
+
+
+          switch(request.getMethod()){
+            case "GET":
+              //On recupere l'URL de la ressource
+              request.getUrl();
+              doGet()
+
+              break;
+
+        }
+
 
         // Send the response
+
         // Send the headers
         out.println("HTTP/1.0 200 OK");
         out.println("Content-Type: text/html");
@@ -81,5 +97,8 @@ public class WebServer {
   public static void main(String args[]) {
     WebServer ws = new WebServer();
     ws.start();
+
   }
+
+
 }
