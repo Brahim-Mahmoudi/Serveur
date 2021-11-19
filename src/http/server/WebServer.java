@@ -2,11 +2,10 @@
 
 package http.server;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 
 /**
  * Example program from Chapter 1 Programming Spiders, Bots and Aggregators in
@@ -19,7 +18,7 @@ import java.net.Socket;
  * @version 1.0
  */
 public class WebServer {
-
+  final public String ROOT_PATH = "../resources";
   /**
    * WebServer constructor.
    */
@@ -41,6 +40,7 @@ public class WebServer {
       try {
         // wait for a connection
         Socket remote = s.accept();
+
         // remote is now the connected socket
         System.out.println("Connection, sending data.");
         BufferedReader in = new BufferedReader(new InputStreamReader(
@@ -55,22 +55,37 @@ public class WebServer {
 
         while (messageUtilisateur != null && !messageUtilisateur.equals(""))
           messageUtilisateur = in.readLine();
+        System.out.println("messageUtilisateur : "+messageUtilisateur);
+
           //On cree une instance de l'objet requete qui permet de parse le messageUtilisateur
           Request request = new Request(messageUtilisateur);
-
+          Response response = new Response();
 
           switch(request.getMethod()){
             case "GET":
               //On recupere l'URL de la ressource
               request.getUrl();
-              doGet()
+              doGet(request,response);
 
+              break;
+
+            default:
+
+              response.setStatus("text/html");
+              response.setContentType("Content-Type: text/html");
+              response.setServer("Server: Bot");
+              response.setBody("<html><body><h1>Method Unknown</h1></body></html>");
               break;
 
         }
 
 
-        // Send the response
+        PrintStream outStream = new PrintStream(remote.getOutputStream());
+        // Send response to the client
+        response.send(outStream);
+
+        // Then close connection
+        remote.close();
 
         // Send the headers
         out.println("HTTP/1.0 200 OK");
@@ -86,6 +101,27 @@ public class WebServer {
         System.out.println("Error: " + e);
       }
     }
+  }
+
+  /** HTTP method GET
+   * @param request requete du serveur
+   * @param response reponse du serveur.
+   */
+  public void doGet(Request request, Response response) throws FileNotFoundException, IOException {
+
+    // Get file
+    File file = new File(ROOT_PATH, request.getUrl()); // We start from bin
+
+    // Get and set file type
+    String fileType = Files.probeContentType(file.toPath());
+    response.setContentType("Content-Type"+fileType);
+
+    //read the file
+    String buf = Files.readString(file.toPath());
+
+    // add to the body
+    response.setBody(buf);
+
   }
 
   /**
