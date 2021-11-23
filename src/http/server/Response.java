@@ -12,7 +12,6 @@ public class Response {
     public static final int BAD_REQUEST = 400;
     public static final int FILE_NOT_FOUND = 404;
     public static final int INTERNAL_SERVER_ERROR = 500;
-    public static final int CONFLICT = 409;
 
 
 
@@ -27,7 +26,6 @@ public class Response {
     }
 
     public void send(OutputStream out) throws IOException {
-
         //Envoie du header
         PrintWriter socketOutStream = new PrintWriter(out);
         switch(status){
@@ -40,11 +38,15 @@ public class Response {
             case "500":
                 status += " Internal server error";
                 break;
+            case "400":
+                status += " Bad Request";
+            break;
 
+            default:
+                break;
 
         }
         socketOutStream.println(httpVersion + " "+ status + " ");
-        System.out.println(httpVersion+ " " + status + " ");
         socketOutStream.println((contentType));
         socketOutStream.println((server));
         if(contentLength !=null){
