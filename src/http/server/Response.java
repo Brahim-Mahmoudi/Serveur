@@ -26,7 +26,6 @@ public class Response {
     }
 
     public void send(OutputStream out) throws IOException {
-
         //Envoie du header
         PrintWriter socketOutStream = new PrintWriter(out);
         switch(status){
@@ -48,7 +47,6 @@ public class Response {
 
         }
         socketOutStream.println(httpVersion + " "+ status + " ");
-        System.out.println(httpVersion+ " " + status + " ");
         socketOutStream.println((contentType));
         socketOutStream.println((server));
         if(contentLength !=null){

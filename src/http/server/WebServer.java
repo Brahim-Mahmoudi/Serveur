@@ -104,7 +104,6 @@ public class WebServer {
 
             case "POST":
               if (fullRequest.containsKey("body")) {
-                request.setBody(fullRequest.get("body"));
                 doPost(request, response);
                 response.setServer("Server: Bot");
                 response.send(remote.getOutputStream());
@@ -186,21 +185,23 @@ public class WebServer {
     } catch (IOException ioEx) {
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
       response.setContentType("Content-Type: text/html");
-      response.addToBody("<html><body><h1>404 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
 
     }
     catch (Exception ex){
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
       response.setContentType("Content-Type: text/html");
-      response.addToBody("<html><body><h1>404 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
     }
   }
 
   public void doPost(Request request, Response response) {
     try {
+      response.setHttpVersion(request.getHttpVersion());
       String url = request.getUrl();
-      String body = request.getBody();
-      File toPost = new File("./src/fichier/" + url);
+      String body = fullRequest.get("body");
+
+      File toPost = new File("./src/fichier" + url);
       if (!toPost.exists()) {
         toPost.createNewFile();
       }
@@ -208,22 +209,22 @@ public class WebServer {
       buffer.write(body);
       buffer.flush();
       buffer.close();
-      response.setHttpVersion(request.getHttpVersion());
       String fileType = Files.probeContentType(toPost.toPath());
       response.setContentType("Content-Type: " + fileType);
       response.addToBody("Content added");
+      response.setStatus(String.valueOf(Response.OK));
     }
 
     catch (IOException ioEx) {
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
       response.setContentType("Content-Type: text/html");
-      response.addToBody("<html><body><h1>404 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
     }
 
     catch (Exception ex){
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
       response.setContentType("Content-Type: text/html");
-      response.addToBody("<html><body><h1>404 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
     }
 
   }
