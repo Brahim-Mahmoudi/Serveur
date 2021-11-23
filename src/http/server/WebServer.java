@@ -116,7 +116,17 @@ public class WebServer {
               response.setServer("Server: Bot");
               response.send(remote.getOutputStream());
 
+            default:
+              response.setStatus(String.valueOf(Response.BAD_REQUEST));
+              response.setHttpVersion(request.getHttpVersion());
+              response.setContentType("Content-Type: text/html");
+              response.setServer("Server: Bot");
+              response.addToBody("<html><body><h1>404 - Bad Request</h1></body></html>");
+              response.send(remote.getOutputStream());
+
           }
+
+
 
 
         }
