@@ -2,6 +2,8 @@
 
 package http.server;
 
+import org.w3c.dom.events.EventException;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,6 +11,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Example program from Chapter 1 Programming Spiders, Bots and Aggregators in
@@ -102,6 +105,14 @@ public class WebServer {
               response.send(remote.getOutputStream());
               break;
 
+            case "PUT":
+              if (fullRequest.containsKey("body")) {
+                doPut(request, response);
+                response.setServer("Server: Bot");
+                response.send(remote.getOutputStream());
+              }
+              break;
+
             case "POST":
               if (fullRequest.containsKey("body")) {
                 doPost(request, response);
@@ -110,10 +121,28 @@ public class WebServer {
               }
               break;
 
+
             case "HEAD":
               doHead(request, response);
               response.setServer("Server: Bot");
               response.send(remote.getOutputStream());
+              break;
+
+            case "DELETE":
+              if (fullRequest.containsKey("body")) {
+                response.setStatus(String.valueOf(Response.BAD_REQUEST));
+                response.setHttpVersion(request.getHttpVersion());
+                response.setContentType("Content-Type: text/html");
+                response.setServer("Server: Bot");
+                response.addToBody("<html><body><h1>404 - Bad Request</h1></body></html>");
+                response.send(remote.getOutputStream());
+              }else{
+                doDelete(request,response);
+                response.setServer("Server: Bot");
+                response.send(remote.getOutputStream());
+              }
+
+              break;
 
             default:
               response.setStatus(String.valueOf(Response.BAD_REQUEST));
@@ -163,6 +192,10 @@ public class WebServer {
     try {
       response.setHttpVersion(request.getHttpVersion());
       String url = request.getUrl();
+      String body = fullRequest.get("body");
+      if (body != null){
+        throw new IllegalArgumentException();
+      }
       File toRead = new File("./src/fichier/" + url);
       if(!toRead.exists()){
         throw new FileNotFoundException();
@@ -181,6 +214,12 @@ public class WebServer {
       response.setStatus(String.valueOf(Response.FILE_NOT_FOUND));
       response.setContentType("Content-Type: text/html");
       response.addToBody("<html><body><h1>404 - File Not Found</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+      }
+    catch (IllegalArgumentException ex) {
+        response.setStatus(String.valueOf(Response.CONFLICT));
+        response.setContentType("Content-Type: text/html");
+        response.addToBody("<html><body><h1>409 - Conflict </h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+
 
     } catch (IOException ioEx) {
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
@@ -195,6 +234,65 @@ public class WebServer {
     }
   }
 
+  public void doPut(Request request, Response response) {
+    try {
+      response.setHttpVersion(request.getHttpVersion());
+      String url = request.getUrl();
+      String body = fullRequest.get("body");
+      File toPost = new File("./src/fichier" + url);
+      if (!toPost.exists()) {
+        toPost.createNewFile();
+      }
+      BufferedWriter buffer = new BufferedWriter(new FileWriter(toPost));
+      buffer.write("<html><body><h1>PUT</h1>\n<h2>PUT :</h2>\n" + "    ");
+      if(body.contains("<") && body.contains(">")) {
+        buffer.write(body + "\n</body>\n</html>");
+      }else{
+
+        String [] param = null;
+        if(body.contains("&")){
+
+          param = body.split("&");
+          for (int i = 0; i< param.length; i++){
+            String[] val = param[i].split("=");
+            String propriete = val[0];
+            String valeur = val[1];
+            propriete+= ": "+valeur;
+
+            buffer.write("    <p> "+propriete+ "</p>\n");
+
+          }
+          buffer.write("</body>\n</html>");
+
+        }else{
+          String[] val = body.split("=");
+          String propriete = val[0];
+          String valeur = val[1];
+          propriete+= ": "+valeur;
+          buffer.write("<p>"+propriete + "</p> \n</body>\n</html>");
+        }
+      }
+      buffer.close();
+      String fileType = Files.probeContentType(toPost.toPath());
+      response.setContentType("Content-Type: " + fileType);
+      response.addToBody("Content added");
+      response.setStatus(String.valueOf(Response.CREATED));
+    }
+
+    catch (IOException ioEx) {
+      response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
+      response.setContentType("Content-Type: text/html");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
+    }
+
+    catch (Exception ex){
+      response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
+      response.setContentType("Content-Type: text/html");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+    }
+
+  }
+
   public void doPost(Request request, Response response) {
     try {
       response.setHttpVersion(request.getHttpVersion());
@@ -205,9 +303,53 @@ public class WebServer {
       if (!toPost.exists()) {
         toPost.createNewFile();
       }
+
+
+      BufferedReader lecteurAvecBuffer = null;
+      String ligne;
+      String contenuFichier = "";
+      lecteurAvecBuffer = new BufferedReader(new FileReader("./src/fichier" + url));
+      while ((ligne = lecteurAvecBuffer.readLine()) != null)
+      {
+
+        contenuFichier += ligne+"\n";
+      }
+      lecteurAvecBuffer.close();
+      String[] contenuSplit = contenuFichier.split("</body>");
+
+
       BufferedWriter buffer = new BufferedWriter(new FileWriter(toPost));
-      buffer.write(body);
-      buffer.flush();
+
+
+      if(body.contains("<") && body.contains(">")) {
+
+        buffer.write(contenuSplit[0] + "    "+body + "\n</body>"+ contenuSplit[1]);
+      }else{
+
+        String [] param = null;
+        if(body.contains("&")){
+          buffer.write(contenuSplit[0]);
+          param = body.split("&");
+          for (int i = 0; i< param.length; i++){
+            String[] val = param[i].split("=");
+            String propriete = val[0];
+            String valeur = val[1];
+            propriete+= ": "+valeur;
+
+            buffer.write("    <p> "+propriete+ "</p>\n");
+
+          }
+          buffer.write("</body>"+ contenuSplit[1]);
+
+        }else{
+          String[] val = body.split("=");
+          String propriete = val[0];
+          String valeur = val[1];
+          propriete+= ": "+valeur;
+          buffer.write(contenuSplit[0] + "    <p>"+propriete + "</p> \n</body>\n"+ contenuSplit[1]);
+        }
+      }
+
       buffer.close();
       String fileType = Files.probeContentType(toPost.toPath());
       response.setContentType("Content-Type: " + fileType);
@@ -250,12 +392,45 @@ public class WebServer {
     } catch (IOException ioEx) {
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
       response.setContentType("Content-Type: text/html");
-      response.addToBody("<html><body><h1>404 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ioEx.toString() + "</body></html>");
     }
     catch (Exception ex){
       response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
       response.setContentType("Content-Type: text/html");
-      response.addToBody("<html><body><h1>404 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+    }
+  }
+
+  public void doDelete(Request request, Response response) {
+    try {
+      response.setHttpVersion(request.getHttpVersion());
+      String url = request.getUrl();
+      File toRead = new File("./src/fichier/" + url);
+      if(!toRead.exists()){
+        throw new FileNotFoundException();
+      }else{
+        if(toRead.delete()){
+          response.setStatus(String.valueOf(Response.OK));
+          response.setContentType("Content-Type: text/html");
+          response.addToBody("<html><body><h1>File deleted.</h1></body></html>");
+
+        }else{
+          throw new Exception();
+
+        }
+      }
+
+
+
+    } catch (FileNotFoundException ex) {
+      response.setContentType("Content-Type: text/html");
+      response.addToBody("<html><body><h1>404 - File Not Found</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
+      response.setStatus(String.valueOf(Response.FILE_NOT_FOUND));
+    }
+    catch (Exception ex){
+      response.setStatus(String.valueOf(Response.INTERNAL_SERVER_ERROR));
+      response.setContentType("Content-Type: text/html");
+      response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
     }
   }
 }
