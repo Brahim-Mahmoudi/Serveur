@@ -2,16 +2,14 @@
 
 package http.server;
 
-import org.w3c.dom.events.EventException;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+
 
 /**
  * Example program from Chapter 1 Programming Spiders, Bots and Aggregators in
@@ -20,17 +18,21 @@ import java.util.concurrent.ExecutionException;
  * WebServer is a very simple web-server. Any request is responded with a very
  * simple web-page.
  * 
- * @author Jeff Heaton
+ * @author MAHMOUDI Brahim, DAKHIL El Yazid
  * @version 1.0
  */
 public class WebServer {
 
   /**
-   * WebServer constructor.
+   * constructeur du serveur web
    */
 
   HashMap<String, String> fullRequest;
 
+  /**
+   * Permet de démarrer le serveur au lancement de celui ci. Il faut crée une socket  et l'attribuer un port, dans notre cas le port 3000.
+   * Cette socket attend les requetes et renvoie des reponses.
+   */
   protected void start() {
     ServerSocket s;
 
@@ -158,16 +160,6 @@ public class WebServer {
 
 
         }
-          /*// Send the response
-
-          // Send the headers
-          out.println("HTTP/1.0 200 OK");
-          out.println("Content-Type: text/html");
-          out.println("Server: Bot");
-          // this blank line signals the end of the headers
-          out.println("");
-          // Send the HTML page
-          out.println("<H1>Welcome to the Ultra Mini-WebServer</H2>");*/
         out.flush();
         remote.close();
 
@@ -178,9 +170,9 @@ public class WebServer {
   }
 
   /**
-   * Start the application.
+   * Démarre l'application
    *
-   * @param args Command line parameters are not used.
+   * @param args ligne de commande au lancement de la méthode principale, pas utilisé ici
    */
   public static void main(String args[]) {
     WebServer ws = new WebServer();
@@ -188,6 +180,11 @@ public class WebServer {
 
   }
 
+  /**
+   * Cette méthode petmet de gérer la méthode HTTP GET. Cette méthode renvoie dans le body de la réponse, la ressource demandé dans la requête, cette ressource peut être au format souhaité ( vidéo, texte, audio... ).
+   * @param request: la requête recue
+   * @param response: la réponse à remplir
+   */
   public void doGet(Request request, Response response) {
     try {
       response.setHttpVersion(request.getHttpVersion());
@@ -233,7 +230,11 @@ public class WebServer {
       response.addToBody("<html><body><h1>500 - Internal Server Error</h1>\n<h2>Error :</h2>\n" + ex.toString() + "</body></html>");
     }
   }
-
+  /**
+   * Cette méthode petmet de gérer la méthode HTTP PUT. Cette méthode permet de placer dans un fichier existant ou non le contenu du body de la requête. Cette méthode écrase donc l'ancien contenu si le fichier est existant.
+   * @param request: la requête recue
+   * @param response: la réponse à remplir
+   */
   public void doPut(Request request, Response response) {
     try {
       response.setHttpVersion(request.getHttpVersion());
@@ -244,7 +245,7 @@ public class WebServer {
         toPost.createNewFile();
       }
       BufferedWriter buffer = new BufferedWriter(new FileWriter(toPost));
-      buffer.write("<html><body><h1>PUT</h1>\n<h2>PUT :</h2>\n" + "    ");
+      buffer.write("<html><body><h1>PUT </h1>\n<h2>PUT :</h2>\n" + "    ");
       if(body.contains("<") && body.contains(">")) {
         buffer.write(body + "\n</body>\n</html>");
       }else{
@@ -292,7 +293,11 @@ public class WebServer {
     }
 
   }
-
+  /**
+   * Cette méthode petmet de gérer la méthode HTTP POST. Cette méthode permet de placé dans un fichier existant ou non, le contenu du body de la reqête dans la fin du fichier.
+   * @param request: la requête recue
+   * @param response: la réponse à remplir
+   */
   public void doPost(Request request, Response response) {
     try {
       response.setHttpVersion(request.getHttpVersion());
@@ -370,7 +375,11 @@ public class WebServer {
     }
 
   }
-
+  /**
+   * Cette méthode petmet de gérer la méthode HTTP HEAD. Cette méthode demande les en-têtes qui seraient retournés si la ressource spécifiée était demandée avec une méthode HTTP GET
+   * @param request: la requête recue
+   * @param response: la réponse à remplir
+   */
   public void doHead(Request request, Response response) {
     try {
       response.setHttpVersion(request.getHttpVersion());
@@ -401,6 +410,11 @@ public class WebServer {
     }
   }
 
+  /**
+   * Cette méthode petmet de gérer la méthode HTTP DELETE. Cette méthode supprime la ressource indiquée
+   * @param request: la requête recue
+   * @param response: la réponse à remplir
+   */
   public void doDelete(Request request, Response response) {
     try {
       response.setHttpVersion(request.getHttpVersion());
