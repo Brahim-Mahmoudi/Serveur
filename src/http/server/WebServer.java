@@ -266,11 +266,18 @@ public class WebServer {
           buffer.write("</body>\n</html>");
 
         }else{
-          String[] val = body.split("=");
-          String propriete = val[0];
-          String valeur = val[1];
-          propriete+= ": "+valeur;
-          buffer.write("<p>"+propriete + "</p> \n</body>\n</html>");
+          if(body.contains("=")){
+            String[] val = body.split("=");
+            String propriete = val[0];
+            String valeur = val[1];
+            propriete+= ": "+valeur;
+            buffer.write("<p>"+propriete + "</p> \n</body>\n</html>");
+          }else{
+            buffer.write("<p>"+body + "</p> \n</body>\n</html>");
+          }
+
+
+
         }
       }
       buffer.close();
@@ -347,11 +354,16 @@ public class WebServer {
           buffer.write("</body>"+ contenuSplit[1]);
 
         }else{
-          String[] val = body.split("=");
-          String propriete = val[0];
-          String valeur = val[1];
-          propriete+= ": "+valeur;
-          buffer.write(contenuSplit[0] + "    <p>"+propriete + "</p> \n</body>\n"+ contenuSplit[1]);
+          if(body.contains("=")){
+            String[] val = body.split("=");
+            String propriete = val[0];
+            String valeur = val[1];
+            propriete+= ": "+valeur;
+            buffer.write(contenuSplit[0] + "    <p>"+propriete + "</p> \n</body>\n"+ contenuSplit[1]);
+          }else{
+            buffer.write(contenuSplit[0] + "    <p>"+body + "</p> \n</body>\n"+ contenuSplit[1]);
+          }
+
         }
       }
 
